@@ -1,0 +1,18 @@
+﻿@model blog.Models.BlogPost
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<h1>@Html.DisplayFor(model => model.Title)</h1>
+<p><strong>Posted on:</strong> @Html.DisplayFor(model => model.PostedDate)</p>
+@if (!string.IsNullOrEmpty(Model.Author))
+{
+    <p><strong>By:</strong> @Html.DisplayFor(model => model.Author)</p>
+}
+<div>
+    @Html.DisplayFor(model => model.Content)
+</div>
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>

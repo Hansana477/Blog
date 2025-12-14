@@ -1,0 +1,93 @@
+﻿@model IEnumerable<blog.Models.BlogPost>
+
+@{
+    ViewData["Title"] = "Blog Posts";
+    var searchString = ViewBag.SearchString as string ?? "";
+    var currentPage = (int)ViewBag.CurrentPage;
+    var totalPages = (int)ViewBag.TotalPages;
+}
+
+<h1>Blog Posts</h1>
+<a asp-action="Create" class="btn btn-success mb-3">New Post</a>
+
+<!-- Search Form -->
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="searchString" class="form-control" placeholder="Search by title or content..." value="@searchString" />
+        <button type="submit" class="btn btn-outline-secondary">Search</button>
+        @if (!string.IsNullOrEmpty(searchString))
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+        }
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <p>No posts found. <a asp-action="Create">Create one?</a></p>
+}
+else
+{
+    <div class="row">
+        @foreach (var post in Model)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <!-- Added shadow for style -->
+                    <div class="card-body">
+                        <h5 class="card-title">@Html.DisplayFor(modelItem => post.Title)</h5>
+                        <p class="card-text text-muted small">
+                            @Html.DisplayFor(modelItem => post.PostedDate)
+                            @if (!string.IsNullOrEmpty(post.Author))
+                            {
+                                <span>by @post.Author</span>
+                            }
+                        </p>
+                        <p class="card-text">
+                            @if (post.Content.Length > 100)
+                            {
+                                @post.Content.Substring(0, 100);
+                                                }
+                            else
+                            {
+                                @post.Content
+                            }
+                        </p>
+                        <div class="btn-group">
+                            <a asp-action="Details" asp-route-id="@post.Id" class="btn btn-primary btn-sm">Read More</a>
+                            <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-warning btn-sm">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@post.Id" class="btn btn-danger btn-sm">Delete</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Blog pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-searchString="@searchString">Previous</a>
+                </li>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-searchString="@searchString">@i</a>
+                    </li>
+                }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-searchString="@searchString">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

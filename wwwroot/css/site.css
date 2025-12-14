@@ -29,3 +29,24 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.card {
+    transition: transform 0.2s; /* Hover effect */
+}
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+.card-title {
+    color: #333;
+    font-weight: bold;
+}
+
+.btn-group .btn {
+    margin-right: 5px;
+}
+
+    .btn-group .btn:last-child {
+        margin-right: 0;
+    }

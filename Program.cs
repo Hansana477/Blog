@@ -11,6 +11,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    if (!context.BlogPosts.Any())
+    {
+        context.BlogPosts.AddRange(
+            new BlogPost { Title = "First Post", Content = "This is the content of the first blog post. Welcome to my blog!", PostedDate = DateTime.Now, Author = "Admin" },
+            new BlogPost { Title = "Second Post", Content = "Here's another entry. ASP.NET Core is awesome for building blogs!", PostedDate = DateTime.Now.AddDays(-1) }
+        );
+        context.SaveChanges();
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
