@@ -1,0 +1,8 @@
+﻿@model blog.Models.Comment
+
+<div class="card mb-2">
+    <div class="card-body">
+        <h6>@Model.User?.UserName ?? "Anonymous" <small class="text-muted">(@Model.PostedDate)</small></h6>
+        <p class="card-text">@Model.Content</p>
+    </div>
+</div>

@@ -16,6 +16,10 @@ namespace blog.Models
         [DataType(DataType.Date)] // Formats as date
         public DateTime PostedDate { get; set; } = DateTime.Now;
 
+        // Add these properties
+        public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public ICollection<Like> Likes { get; set; } = new List<Like>();
+
         // Optional: Add author later
         public string? Author { get; set; }
     }

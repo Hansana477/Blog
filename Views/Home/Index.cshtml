@@ -1,8 +1,43 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="hero">
+    <div>
+        <span class="hero-eyebrow">
+            <span>Fresh perspectives</span>
+            <span class="badge-soft accent">Daily reads</span>
+        </span>
+        <h1 class="hero-title">A clean, modern space for curious readers.</h1>
+        <p class="hero-subtitle">
+            Discover thoughtful stories, behind-the-scenes notes, and practical guides written for people who like their content purposeful and easy to read.
+        </p>
+        <div class="hero-actions">
+            <a class="btn btn-gradient" asp-controller="Blog" asp-action="Index">Explore posts</a>
+            <a class="btn btn-ghost" asp-controller="Home" asp-action="Privacy">View policies</a>
+        </div>
+        <div class="hero-metrics">
+            <div class="metric">
+                <strong>Fast, focused UI</strong>
+                <span>Minimal distractions for long reads</span>
+            </div>
+            <div class="metric">
+                <strong>Secure by default</strong>
+                <span>Identity baked into the experience</span>
+            </div>
+            <div class="metric">
+                <strong>Responsive layout</strong>
+                <span>Optimized for phone to desktop</span>
+            </div>
+        </div>
+    </div>
+    <div class="hero-card glass-card">
+        <h4>What&apos;s inside</h4>
+        <p>Stories, experiments, and lessons learned—curated to keep you inspired and informed without the clutter.</p>
+        <ul class="mb-0">
+            <li>Snappy search and pagination for fast discovery.</li>
+            <li>Readable cards with clear actions for each post.</li>
+            <li>Thoughtful theming that adapts to any screen.</li>
+        </ul>
+    </div>
+</section>

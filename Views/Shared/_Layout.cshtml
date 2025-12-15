@@ -1,32 +1,45 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
+ <!-- Starts in light mode; JS will check localStorage -->
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - blog</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - My Blog Site</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"> <!-- For sun/moon icons -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/blog.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MyBlogSite.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm box-shadow mb-3">
+            <!-- Removed border-bottom -->
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">blog</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">My Blog Site</a>
+
+                <!-- Dark/Light Toggle Button -->
+                <button id="theme-toggle" class="btn btn-outline-secondary ms-2" type="button" title="Toggle Dark Mode">
+                    <i class="bi bi-moon-stars-fill"></i> <!-- Starts as moon (dark icon); JS swaps to sun -->
+                </button>
+
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav mx-auto">
+                        <!-- Centered main tabs -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a> <!-- Removed text-dark; theme handles color -->
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-area="" asp-controller="Blog" asp-action="Index">Blog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
+                    <partial name="_LoginPartial" /> <!-- Auth links on right -->
                 </div>
             </div>
         </nav>
@@ -39,12 +52,47 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - blog - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - My Blog Site - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Dark/Light Mode Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const html = document.documentElement;
+            const toggleBtn = document.getElementById('theme-toggle');
+            const icon = toggleBtn.querySelector('i');
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            html.setAttribute('data-bs-theme', savedTheme);
+            updateIcon(savedTheme);
+
+            // Toggle function
+            toggleBtn.addEventListener('click', function () {
+                const currentTheme = html.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                html.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
+            });
+
+            function updateIcon(theme) {
+                if (theme === 'dark') {
+                    icon.className = 'bi bi-sun-fill'; // Sun for dark mode (switch to light)
+                    toggleBtn.title = 'Switch to Light Mode';
+                } else {
+                    icon.className = 'bi bi-moon-stars-fill'; // Moon for light mode (switch to dark)
+                    toggleBtn.title = 'Switch to Dark Mode';
+                }
+            }
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

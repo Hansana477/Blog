@@ -1,18 +1,75 @@
 ﻿@model blog.Models.BlogPost
-
 @{
     ViewData["Title"] = Model.Title;
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var hasLiked = ViewBag.UserHasLiked as bool? ?? false;
+    var likeCount = (int)(ViewBag.LikeCount ?? 0);
+    var commentCount = (int)(ViewBag.CommentCount ?? 0);
 }
 
-<h1>@Html.DisplayFor(model => model.Title)</h1>
-<p><strong>Posted on:</strong> @Html.DisplayFor(model => model.PostedDate)</p>
+<h1>@Model.Title</h1>
+<p><strong>Posted on:</strong> @Model.PostedDate</p>
 @if (!string.IsNullOrEmpty(Model.Author))
 {
-    <p><strong>By:</strong> @Html.DisplayFor(model => model.Author)</p>
+    <p><strong>By:</strong> @Model.Author</p>
 }
-<div>
-    @Html.DisplayFor(model => model.Content)
+<div>@Model.Content</div>
+
+<!-- Like Button -->
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="mb-3">
+        <form asp-action="ToggleLike" asp-route-postId="@Model.Id" method="post" style="display: inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn @(hasLiked ? "btn-danger" : "btn-outline-primary")">
+                @(hasLiked ? "Unlike" : "Like") (@likeCount)
+            </button>
+        </form>
+    </div>
+}
+else
+{
+    <p><a asp-area="Identity" asp-page="/Account/Login">Log in</a> to like this post.</p>
+}
+
+<!-- Comments Section -->
+<h3>Comments (@commentCount)</h3>
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <form asp-action="AddComment" asp-route-postId="@Model.Id" method="post" class="mb-3">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <textarea asp-for="Content" class="form-control" rows="3" placeholder="Add a comment..."></textarea>
+            <input type="hidden" name="content" value="" id="commentContent" /> <!-- For JS submit -->
+        </div>
+        <button type="submit" class="btn btn-primary">Post Comment</button>
+    </form>
+}
+else
+{
+    <p><a asp-area="Identity" asp-page="/Account/Login">Log in</a> to comment.</p>
+}
+
+<div id="commentsList">
+    @foreach (var comment in Model.Comments.OrderBy(c => c.PostedDate))
+    {
+        @await Html.PartialAsync("_CommentPartial", comment)
+    }
 </div>
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<div><a asp-action="Index">Back to List</a></div>
+
+@if (User.IsInRole("Admin"))
+{
+    <div><a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a> <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a></div>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // AJAX for like (optional; current is form post)
+        // For comment, add JS if wanting AJAX
+    </script>
+}
