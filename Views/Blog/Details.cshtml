@@ -1,4 +1,6 @@
 ﻿@model blog.Models.BlogPost
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
 @{
     ViewData["Title"] = Model.Title;
     var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -13,16 +15,23 @@
 {
     <p><strong>By:</strong> @Model.Author</p>
 }
+@if (!string.IsNullOrEmpty(Model.ImagePath))
+{
+    <div class="mb-3">
+        <img src="@Url.Content($"~/{Model.ImagePath}")" alt="@Model.Title" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;" />
+    </div>
+}
 <div>@Model.Content</div>
 
-<!-- Like Button -->
+<!-- Like Button (AJAX) -->
 @if (User.Identity?.IsAuthenticated == true)
 {
     <div class="mb-3">
-        <form asp-action="ToggleLike" asp-route-postId="@Model.Id" method="post" style="display: inline;">
+        <form id="likeForm" style="display: inline;">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn @(hasLiked ? "btn-danger" : "btn-outline-primary")">
-                @(hasLiked ? "Unlike" : "Like") (@likeCount)
+            <input type="hidden" name="postId" value="@Model.Id" />
+            <button type="submit" id="likeBtn" class="btn @(hasLiked ? "btn-danger" : "btn-outline-primary")">
+                <i class="bi @(hasLiked ? "bi-heart-fill" : "bi-heart")"></i> @(hasLiked ? "Unlike" : "Like") (<span id="likeCount">@likeCount</span>)
             </button>
         </form>
     </div>
@@ -36,13 +45,14 @@ else
 <h3>Comments (@commentCount)</h3>
 @if (User.Identity?.IsAuthenticated == true)
 {
-    <form asp-action="AddComment" asp-route-postId="@Model.Id" method="post" class="mb-3">
+    <form id="commentForm" class="mb-3">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="postId" value="@Model.Id" />
         <div class="form-group">
-            <textarea asp-for="Content" class="form-control" rows="3" placeholder="Add a comment..."></textarea>
-            <input type="hidden" name="content" value="" id="commentContent" /> <!-- For JS submit -->
+            <textarea name="content" id="commentText" class="form-control" rows="3" placeholder="Add a comment..." required></textarea>
+            <span class="text-danger" id="commentError"></span>
         </div>
-        <button type="submit" class="btn btn-primary">Post Comment</button>
+        <button type="submit" id="commentBtn" class="btn btn-primary">Post Comment</button>
     </form>
 }
 else
@@ -61,7 +71,10 @@ else
 
 @if (User.IsInRole("Admin"))
 {
-    <div><a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a> <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a></div>
+    <div class="mt-3">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+    </div>
 }
 
 @section Scripts {
@@ -69,7 +82,105 @@ else
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
-        // AJAX for like (optional; current is form post)
-        // For comment, add JS if wanting AJAX
+        // AJAX for Like Button (no redirect)
+        document.addEventListener('DOMContentLoaded', function () {
+            const likeForm = document.getElementById('likeForm');
+            if (likeForm) {
+                likeForm.addEventListener('submit', async function (e) {
+                    e.preventDefault(); // Prevent full form submit/redirect
+
+                    const formData = new FormData(likeForm);
+                    const token = likeForm.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    // Disable button during request
+                    const likeBtn = document.getElementById('likeBtn');
+                    const originalHTML = likeBtn.innerHTML;
+                    likeBtn.disabled = true;
+                    likeBtn.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm"></i> Loading...';
+
+                    try {
+                        const response = await fetch('/Blog/ToggleLike', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': token // Include anti-forgery token
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            // Update button
+                            if (data.liked) {
+                                likeBtn.className = 'btn btn-danger';
+                                likeBtn.innerHTML = '<i class="bi bi-heart-fill"></i> Unlike (<span id="likeCount">' + data.count + '</span>)';
+                            } else {
+                                likeBtn.className = 'btn btn-outline-primary';
+                                likeBtn.innerHTML = '<i class="bi bi-heart"></i> Like (<span id="likeCount">' + data.count + '</span>)';
+                            }
+                        } else {
+                            alert('Error liking post. Try again.');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Network error. Please try again.');
+                    } finally {
+                        likeBtn.disabled = false;
+                        likeBtn.innerHTML = originalHTML; // Restore if error
+                    }
+                });
+            }
+
+            // AJAX for Comment Form (no redirect)
+            const commentForm = document.getElementById('commentForm');
+            if (commentForm) {
+                commentForm.addEventListener('submit', async function (e) {
+                    e.preventDefault(); // Prevent full form submit/redirect
+
+                    const content = document.getElementById('commentText').value.trim();
+                    if (!content) {
+                        document.getElementById('commentError').textContent = 'Comment cannot be empty.';
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('postId', document.querySelector('input[name="postId"]').value);
+                    formData.append('content', content);
+                    const token = commentForm.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    // Disable button during request
+                    const commentBtn = document.getElementById('commentBtn');
+                    const originalBtnText = commentBtn.innerHTML;
+                    commentBtn.disabled = true;
+                    commentBtn.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm"></i> Posting...';
+
+                    try {
+                        const response = await fetch('/Blog/AddComment', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': token // Include anti-forgery token
+                            }
+                        });
+
+                        if (response.ok) {
+                            const html = await response.text(); // Get partial HTML
+                            document.getElementById('commentsList').insertAdjacentHTML('beforeend', html); // Append new comment
+                            document.getElementById('commentText').value = ''; // Clear textarea
+                            document.querySelector('h3').textContent = 'Comments (' + (commentCount + 1) + ')'; // Update count (client-side)
+                            document.getElementById('commentError').textContent = ''; // Clear errors
+                        } else {
+                            const errorData = await response.json();
+                            document.getElementById('commentError').textContent = errorData.message || 'Error posting comment.';
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        document.getElementById('commentError').textContent = 'Network error. Please try again.';
+                    } finally {
+                        commentBtn.disabled = false;
+                        commentBtn.innerHTML = originalBtnText; // Restore button
+                    }
+                });
+            }
+        });
     </script>
 }

@@ -8,7 +8,7 @@ namespace blog.Controllers
     {
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction("Index", "Blog"); // Default landing shows all posts
         }
 
         public IActionResult Privacy()

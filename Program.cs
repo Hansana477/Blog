@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using blog.Models;
+using blog.Models; // Replace 'blog' with your actual project namespace if different
+using blog.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>() // Enable roles
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// Basic email sender for Identity (forgot password, confirmations, etc.)
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 var app = builder.Build();
 

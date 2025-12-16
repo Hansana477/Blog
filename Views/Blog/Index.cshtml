@@ -7,77 +7,102 @@
     var totalPages = (int)ViewBag.TotalPages;
 }
 
-<h1>Blog Posts</h1>
-@if (User.IsInRole("Admin"))
-{
-    <a asp-action="Create" class="btn btn-success mb-3">New Post</a>
-}
-
-<!-- Search Form -->
-<form asp-action="Index" method="get" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="searchString" class="form-control" placeholder="Search by title or content..." value="@searchString" />
-        <button type="submit" class="btn btn-outline-secondary">Search</button>
-        @if (!string.IsNullOrEmpty(searchString))
-        {
-            <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
-        }
+<section class="news-hero">
+    <div class="hero-top">
+        <div class="pill">Stories</div>
+        <div class="pill">Product</div>
+        <div class="pill">Impact</div>
+        <div class="pill">Behind the scenes</div>
     </div>
-</form>
+    <h1>Newsroom</h1>
+    <p class="hero-subtitle">Insights and stories about our products, our team, and the community we serve.</p>
+    <div class="hero-actions">
+        <a class="btn btn-gradient" asp-area="Identity" asp-page="/Account/Register">Start Free Trial</a>
+        <form asp-action="Index" method="get" class="search-compact">
+            <input type="text" name="searchString" placeholder="Search posts..." value="@searchString" />
+            <button type="submit"><i class="bi bi-search"></i></button>
+        </form>
+    </div>
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="admin-actions">
+            <a asp-action="Create" class="btn btn-secondary">New Post</a>
+        </div>
+    }
+</section>
 
 @if (!Model.Any())
 {
-    <p>No posts found. @if (User.IsInRole("Admin")) {
-    <a asp-action="Create">Create one?</a>
-}
-</p>
+    <div class="empty-state">No posts found. @if (User.IsInRole("Admin")) { <a asp-action="Create">Create one?</a>}</div>
 }
 else
 {
-    <div class="row">
-        @foreach (var post in Model)
+    var featured = Model.FirstOrDefault();
+    var rest = Model.Skip(1).ToList();
+
+    <section class="featured-grid">
+        @if (featured != null)
         {
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <!-- Added shadow for style -->
-                    <div class="card-body">
-                        <h5 class="card-title">@Html.DisplayFor(modelItem => post.Title)</h5>
-                        <p class="card-text text-muted small">
-                            @Html.DisplayFor(modelItem => post.PostedDate)
-                            @if (!string.IsNullOrEmpty(post.Author))
-                            {
-                                <span>by @post.Author</span>
-                            }
-                        </p>
-                        <p class="card-text">
-                            @if (post.Content.Length > 100)
-                            {
-                                @post.Content.Substring(0, 100);
-                                                }
-                            else
-                            {
-                                @post.Content
-                            }
-                        </p>
-                        <!-- Like and Comment Counts -->
-                        <p class="card-text text-muted small">
-                            <i class="bi bi-heart-fill"></i> @post.Likes.Count likes | <i class="bi bi-chat"></i> @post.Comments.Count comments
-                        </p>
-                        <div class="btn-group">
-                            <a asp-action="Details" asp-route-id="@post.Id" class="btn btn-primary btn-sm">Read More</a>
-                            @if (User.IsInRole("Admin"))
-                            {
-                                <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-warning btn-sm">Edit</a>
-                                <a asp-action="Delete" asp-route-id="@post.Id" class="btn btn-danger btn-sm">Delete</a>
-                            }
-                        </div>
-                    </div>
+            <div class="featured-card">
+                @if (!string.IsNullOrEmpty(featured.ImagePath))
+                {
+                    <div class="featured-media" style="background-image:url('@Url.Content($"~/{featured.ImagePath}")');"></div>
+                }
+                <div class="featured-body">
+                    <div class="eyebrow">Highlight · @featured.PostedDate.ToString("MMMM d, yyyy")</div>
+                    <h2>@featured.Title</h2>
+                    <p>@(featured.Content.Length > 140 ? featured.Content.Substring(0, 140) + "..." : featured.Content)</p>
+                    <a class="btn btn-primary" asp-action="Details" asp-route-id="@featured.Id">Read Story</a>
                 </div>
             </div>
         }
-    </div>
+        <div class="newsletter-card">
+            <h4>Subscribe</h4>
+            <p>Get weekly updates on new stories and product drops.</p>
+            <form class="newsletter-form">
+                <input type="email" placeholder="Your email" />
+                <button type="submit" class="btn btn-gradient">Start Free Trial</button>
+            </form>
+            <div class="social-row">
+                <span>Follow us</span>
+                <div class="social-icons">
+                    <a href="#"><i class="bi bi-twitter"></i></a>
+                    <a href="#"><i class="bi bi-instagram"></i></a>
+                    <a href="#"><i class="bi bi-facebook"></i></a>
+                    <a href="#"><i class="bi bi-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <!-- Pagination -->
+    <section class="news-grid">
+        @foreach (var post in rest)
+        {
+            <article class="news-card">
+                @if (!string.IsNullOrEmpty(post.ImagePath))
+                {
+                    <div class="news-thumb" style="background-image:url('@Url.Content($"~/{post.ImagePath}")');"></div>
+                }
+                <div class="news-meta">
+                    <span>@post.PostedDate.ToString("MMMM d, yyyy")</span>
+                    @if (!string.IsNullOrEmpty(post.Author))
+                    {
+                        <span>· @post.Author</span>
+                    }
+                </div>
+                <h5>@post.Title</h5>
+                <p>@(post.Content.Length > 120 ? post.Content.Substring(0,120) + "..." : post.Content)</p>
+                <div class="news-actions">
+                    <a asp-action="Details" asp-route-id="@post.Id" class="btn btn-secondary btn-sm">Read more</a>
+                    <div class="news-stats">
+                        <span><i class="bi bi-heart-fill"></i> @post.Likes.Count</span>
+                        <span><i class="bi bi-chat"></i> @post.Comments.Count</span>
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
+
     @if (totalPages > 1)
     {
         <nav aria-label="Blog pagination">

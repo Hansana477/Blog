@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using blog.Models; // Replace 'blog' with your actual project namespace if different
 
@@ -10,10 +12,12 @@ namespace blog.Controllers // Match your project namespace
     public class BlogController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public BlogController(ApplicationDbContext context)
+        public BlogController(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: /Blog/Index - Lists posts with search and pagination
@@ -86,16 +90,31 @@ namespace blog.Controllers // Match your project namespace
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([Bind("Title,Content,Author")] BlogPost blogPost)
+        public async Task<IActionResult> Create([Bind("Title,Content,Author")] BlogPost blogPost, IFormFile? imageFile)
         {
             if (ModelState.IsValid)
             {
-                blogPost.PostedDate = DateTime.Now; // Set on creation
+                // Validate and save image
+                if (imageFile != null)
+                {
+                    try
+                    {
+                        var fileName = await SaveImage(imageFile);
+                        blogPost.ImagePath = fileName;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Error already added to ModelState
+                        return View(blogPost);
+                    }
+                }
+
+                blogPost.PostedDate = DateTime.Now;
                 _context.Add(blogPost);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index)); // Redirect to list
+                return RedirectToAction(nameof(Index));
             }
-            return View(blogPost); // Return form with errors
+            return View(blogPost);
         }
 
         // GET: /Blog/Edit/5 - Show edit form
@@ -119,7 +138,7 @@ namespace blog.Controllers // Match your project namespace
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Content,Author,PostedDate")] BlogPost blogPost)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Content,Author,PostedDate,ImagePath")] BlogPost blogPost, IFormFile? imageFile)
         {
             if (id != blogPost.Id)
             {
@@ -130,6 +149,30 @@ namespace blog.Controllers // Match your project namespace
             {
                 try
                 {
+                    // Handle new image upload/replace
+                    if (imageFile != null)
+                    {
+                        // Delete old image if exists
+                        if (!string.IsNullOrEmpty(blogPost.ImagePath))
+                        {
+                            var oldFilePath = Path.Combine(_environment.WebRootPath, blogPost.ImagePath);
+                            if (System.IO.File.Exists(oldFilePath))
+                            {
+                                System.IO.File.Delete(oldFilePath);
+                            }
+                        }
+                        try
+                        {
+                            var fileName = await SaveImage(imageFile);
+                            blogPost.ImagePath = fileName;
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // Error already added to ModelState
+                            return View(blogPost);
+                        }
+                    }
+
                     _context.Update(blogPost);
                     await _context.SaveChangesAsync();
                 }
@@ -176,6 +219,16 @@ namespace blog.Controllers // Match your project namespace
             var blogPost = await _context.BlogPosts.FindAsync(id);
             if (blogPost != null)
             {
+                // Delete image if exists
+                if (!string.IsNullOrEmpty(blogPost.ImagePath))
+                {
+                    var filePath = Path.Combine(_environment.WebRootPath, blogPost.ImagePath);
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                }
+
                 _context.BlogPosts.Remove(blogPost);
                 await _context.SaveChangesAsync();
             }
@@ -245,6 +298,30 @@ namespace blog.Controllers // Match your project namespace
         private async Task<int> GetLikeCount(int postId)
         {
             return await _context.Likes.CountAsync(l => l.BlogPostId == postId);
+        }
+
+        // Helper: Save uploaded image
+        private async Task<string> SaveImage(IFormFile imageFile)
+        {
+            var wwwrootPath = _environment.WebRootPath;
+
+            // Validate file
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(extension) || imageFile.Length > 5 * 1024 * 1024) // 5MB
+            {
+                ModelState.AddModelError("", "Invalid image: Only JPG/PNG, max 5MB.");
+                throw new InvalidOperationException("Invalid file");
+            }
+
+            var fileName = $"post-{DateTime.Now:yyyyMMddHHmmss}{extension}";
+            var filePath = Path.Combine(wwwrootPath, "images", fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!); // Ensure folder exists
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await imageFile.CopyToAsync(stream);
+            }
+            return $"images/{fileName}";
         }
     }
 }

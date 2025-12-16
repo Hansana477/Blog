@@ -3,80 +3,86 @@
 
 @{
     ViewData["Title"] = "Log in";
+    var hasExternal = (Model.ExternalLogins?.Count ?? 0) > 0;
 }
 
-<h1>@ViewData["Title"]</h1>
-<div class="row">
-    <div class="col-md-4">
-        <section>
-            <form id="account" method="post">
-                <h2>Use a local account to log in.</h2>
-                <hr />
+<section class="auth-shell gradient-ink">
+    <div class="auth-card">
+        <div class="auth-pane auth-pane--form">
+            <div class="auth-brand">
+                <span class="brand-dot"></span>
+                <span class="brand-bar"></span>
+                <span class="brand-dot"></span>
+            </div>
+            <div class="auth-heading">
+                <p class="eyebrow">Welcome back</p>
+                <h1>Sign in to InkNest</h1>
+                <p class="subhead">Enter your credentials to continue.</p>
+            </div>
+
+            <form id="account" method="post" class="auth-form">
                 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label asp-for="Input.Email" class="form-label">Email</label>
-                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+
+                <label class="auth-label">Email</label>
+                <div class="auth-input">
+                    <input asp-for="Input.Email" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                 </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label asp-for="Input.Password" class="form-label">Password</label>
-                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+
+                <label class="auth-label mt-3">Password</label>
+                <div class="auth-input">
+                    <input asp-for="Input.Password" autocomplete="current-password" aria-required="true" placeholder="••••••••" />
                 </div>
-                <div class="checkbox mb-3">
-                    <label asp-for="Input.RememberMe" class="form-label">
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+
+                <div class="auth-row mt-3">
+                    <label class="remember">
                         <input class="form-check-input" asp-for="Input.RememberMe" />
-                        @Html.DisplayNameFor(m => m.Input.RememberMe)
+                        <span>@Html.DisplayNameFor(m => m.Input.RememberMe)</span>
                     </label>
+                    <a class="auth-link" id="forgot-password" asp-page="./ForgotPassword">Forgot Password</a>
                 </div>
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </form>
-        </section>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
+
+                <button id="login-submit" type="submit" class="auth-btn primary mt-3">Sign in</button>
+
+                <p class="auth-meta">New to InkNest?
+                    <a class="auth-link" asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a>
+                </p>
+
+                @if (hasExternal)
                 {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
+                    <div class="auth-external">
+                        <p>Or continue with</p>
+                        <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                            <div class="auth-external-buttons">
                                 @foreach (var provider in Model.ExternalLogins!)
                                 {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
+                                    <button type="submit" class="auth-btn ghost" name="provider" value="@provider.Name"> @provider.DisplayName </button>
                                 }
-                            </p>
-                        </div>
-                    </form>
+                            </div>
+                        </form>
+                    </div>
                 }
-            }
-        </section>
+            </form>
+        </div>
+
+        <div class="auth-pane auth-pane--spotlight">
+            <div class="quote-card">
+                <p class="quote-eyebrow">What our readers say</p>
+                <h2>“InkNest makes it effortless to discover thoughtful stories.”</h2>
+                <p class="quote-body">Just browse the latest posts, save favorites, and dive in when you’re ready.</p>
+                <div class="quote-author">
+                    <strong>Mas Parjono</strong>
+                    <span>UI Designer at Google</span>
+                </div>
+                <div class="quote-actions">
+                    <button type="button" class="auth-btn pill">←</button>
+                    <button type="button" class="auth-btn pill ghost">→</button>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
