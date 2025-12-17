@@ -1,8 +1,13 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using blog.Models; // Replace 'blog' with your actual project namespace if different
-using blog.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+using blog.Models; // For ApplicationDbContext, BlogPost
+using blog.Services; // For EmailSender, EmailSettings
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,10 +19,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>() // Enable roles
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders(); // For password reset tokens
 
-// Basic email sender for Identity (forgot password, confirmations, etc.)
-builder.Services.AddTransient<IEmailSender, EmailSender>();
+// Email configuration (binds to appsettings.json)
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddTransient<IEmailSender, EmailSender>(); // Single registration
 
 var app = builder.Build();
 
@@ -41,6 +48,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 
+// Seeding (run async in a background task to avoid blocking startup)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -58,9 +66,18 @@ using (var scope = app.Services.CreateScope())
         context.SaveChanges();
     }
 
-    // Seed admin user and role
+    // Seed admin user and role (async operations)
+    await SeedAdminAsync(userManager, roleManager);
+}
+
+app.Run();
+
+// Helper method for async seeding
+async Task SeedAdminAsync(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+{
     string adminEmail = "admin@example.com";
     string adminPassword = "Admin@123";
+
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser == null)
     {
@@ -80,5 +97,3 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(adminUser, "Admin");
     }
 }
-
-app.Run();
