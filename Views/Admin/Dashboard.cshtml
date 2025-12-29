@@ -1,0 +1,94 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h1 class="mb-4">Admin Dashboard</h1>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Posts</h5>
+                <h2>@ViewBag.TotalPosts</h2>
+                <a asp-action="ManagePosts" class="btn btn-light btn-sm">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Total Users</h5>
+                <h2>@ViewBag.TotalUsers</h2>
+                <a asp-action="ManageUsers" class="btn btn-light btn-sm">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Total Comments</h5>
+                <h2>@ViewBag.TotalComments</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Total Likes</h5>
+                <h2>@ViewBag.TotalLikes</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Recent Posts</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var post in ViewBag.RecentPosts as List<BlogPost>)
+                {
+                    <tr>
+                        <td><a asp-action="Details" asp-controller="Blog" asp-route-id="@post.Id">@post.Title</a></td>
+                        <td>@post.PostedDate.ToShortDateString()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h3>Recent Comments</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Post</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var comment in ViewBag.RecentComments as List<Comment>)
+                {
+                    <tr>
+                        <td>@comment.User?.UserName</td>
+                        <td>@comment.BlogPost.Title</td>
+                        <td>@comment.PostedDate.ToShortDateString()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <a asp-action="Create" asp-controller="Blog" class="btn btn-success">New Post</a>
+        <a asp-action="Index" asp-controller="Blog" class="btn btn-primary">View All Posts</a>
+    </div>
+</div>
